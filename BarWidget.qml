@@ -28,19 +28,14 @@ BarWidget {
   function togglePanel() { if (panelLoader.item) panelLoader.item.toggle() }
   function closeForPopoutSwitch() { if (panelLoader.item) panelLoader.item.closeForPopoutSwitch() }
 
-  function outputGlyph() {
+  // One glyph only: volume level of the default output, or muted.
+  function glyph() {
     var s = portService
-    if (!s) return "󰓃"
+    if (!s) return "󰕾"
     if (s.error) return ""
-    if (s.outputMuted) return "󰝟"
-    return Model.portGlyph("sink", s.currentSinkPort)
+    return Model.volumeGlyph(s.outputVolume, s.outputMuted || !s.hasOutput)
   }
-  function inputGlyph() {
-    var s = portService
-    if (!s || !s.hasInput) return ""
-    if (s.inputMuted) return "󰍭"
-    return Model.portGlyph("source", s.currentSourcePort)
-  }
+
   function tooltip() {
     var s = portService
     if (!s) return "Audio Ports service unavailable"
@@ -68,8 +63,9 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.outputGlyph() + (root.inputGlyph() ? " " + root.inputGlyph() : "")
-    active: !!root.portService && root.portService.error !== ""
+    text: root.glyph()
+    // Highlighted on error, or as a subtle hint while the microphone is muted.
+    active: !!root.portService && (root.portService.error !== "" || root.portService.inputMuted)
     tooltipText: root.tooltip()
     onPressed: root.togglePanel()
     onWheelMoved: function(delta) {

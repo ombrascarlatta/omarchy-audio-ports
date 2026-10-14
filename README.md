@@ -11,8 +11,8 @@ including undetected ones, and switches with one click or one key.
 
 ## Features
 
-- Bar icon shows the current output (speaker/headphones/HDMI) and microphone,
-  with mute indicators; scroll over it to change output volume
+- Bar icon: a single volume glyph (low/medium/high/muted), highlighted
+  while the microphone is muted; scroll over it to change output volume
 - Panel lists every port of every ALSA sink and source, with availability
   (`plugged in`, `unplugged`, `not detected`)
 - Click (or Enter) a port to switch to it and make its device the default

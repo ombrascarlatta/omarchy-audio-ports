@@ -60,6 +60,14 @@ function portGlyph(kind, port) {
   return "󰓃"
 }
 
+function volumeGlyph(volume, muted) {
+  if (muted) return "󰝟"
+  var v = clampVolume(volume)
+  if (v < 0.34) return "󰕿"
+  if (v < 0.67) return "󰖀"
+  return "󰕾"
+}
+
 function availabilityLabel(port) {
   if (!port) return ""
   if (port.availability === "available") return "plugged in"
@@ -132,7 +140,7 @@ function levelZone(db) {
 
 if (typeof module !== "undefined") module.exports = {
   parseStatus: parseStatus, defaultDevice: defaultDevice, activePort: activePort,
-  portKind: portKind, portGlyph: portGlyph, availabilityLabel: availabilityLabel,
+  portKind: portKind, portGlyph: portGlyph, volumeGlyph: volumeGlyph, availabilityLabel: availabilityLabel,
   rowId: rowId, buildTargets: buildTargets, indexOfId: indexOfId, move: move,
   clampVolume: clampVolume, peakToDb: peakToDb, dbToFraction: dbToFraction, levelZone: levelZone,
   GOOD_LOW_DB: GOOD_LOW_DB, GOOD_HIGH_DB: GOOD_HIGH_DB, CLIP_DB: CLIP_DB, MAX_DEVICES: MAX_DEVICES, MAX_PORTS: MAX_PORTS
