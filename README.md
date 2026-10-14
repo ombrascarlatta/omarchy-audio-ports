@@ -1,5 +1,7 @@
 # Audio Ports for Omarchy
 
+![Audio Ports panel](preview.png)
+
 Pick the **port** of your sound card (Speakers or Headphones, Internal or
 Headset Microphone) straight from the Omarchy bar.
 
