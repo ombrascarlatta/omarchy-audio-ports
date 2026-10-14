@@ -45,6 +45,10 @@ omarchy plugin enable maxime.audio-ports
 Omarchy plugins run unsandboxed inside the shell. Review the code before
 enabling it.
 
+After updating the files of an installed plugin by hand, run
+`omarchy-restart-shell`: the running shell can keep the previously compiled
+panel components even after `omarchy plugin disable`/`enable`.
+
 Remove with `omarchy plugin remove maxime.audio-ports`. The remembered ports
 live in `~/.local/state/omarchy-audio-ports/ports.tsv`; delete it to forget them.
 
