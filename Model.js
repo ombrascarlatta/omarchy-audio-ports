@@ -60,12 +60,16 @@ function portGlyph(kind, port) {
   return "󰓃"
 }
 
-function volumeGlyph(volume, muted) {
-  if (muted) return "󰝟"
+// Same glyph set as Omarchy's built-in Audio widget (Font Awesome speaker
+// glyphs, which render larger than the Material ones in the bar font).
+function volumeGlyph(volume, muted, headphones) {
+  if (headphones) return "\u{F02CB}"
+  if (muted) return "\uEEE8"
   var v = clampVolume(volume)
-  if (v < 0.34) return "󰕿"
-  if (v < 0.67) return "󰖀"
-  return "󰕾"
+  if (v >= 0.67) return "\uF028"
+  if (v >= 0.34) return "\uF027"
+  if (v > 0) return "\uF026"
+  return "\uEEE8"
 }
 
 function availabilityLabel(port) {

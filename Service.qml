@@ -217,5 +217,8 @@ Item {
     function cycleOutput(): string { return root.cyclePort("sink") }
     function cycleInput(): string { return root.cyclePort("source") }
     function refresh(): string { root.refresh(); return "refreshing" }
+    function volumeUp(): string { root.setOutputVolume(root.outputVolume + 0.05); return String(Math.round(root.outputVolume * 100)) }
+    function volumeDown(): string { root.setOutputVolume(root.outputVolume - 0.05); return String(Math.round(root.outputVolume * 100)) }
+    function toggleMute(): string { root.toggleOutputMute(); return root.outputMuted ? "muted" : "unmuted" }
   }
 }

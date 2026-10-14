@@ -33,7 +33,8 @@ BarWidget {
     var s = portService
     if (!s) return "󰕾"
     if (s.error) return ""
-    return Model.volumeGlyph(s.outputVolume, s.outputMuted || !s.hasOutput)
+    var hp = Model.portKind(s.currentSinkPort) === "headphones"
+    return Model.volumeGlyph(s.outputVolume, s.outputMuted || !s.hasOutput, hp && !s.outputMuted)
   }
 
   function tooltip() {
@@ -59,7 +60,17 @@ BarWidget {
     onLoaded: { root.injectPanel(); Qt.callLater(root.injectPanel) }
   }
 
-  WidgetButton {
+  // Volume OSD like the built-in widget. A scoped host may refuse it.
+  function showOsd() {
+    var s = portService
+    try {
+      if (s && bar && bar.shell && typeof bar.shell.summon === "function")
+        bar.shell.summon("omarchy.osd", JSON.stringify({ icon: Model.volumeGlyph(s.outputVolume, s.outputMuted), value: Math.round(s.outputVolume * 100) }))
+    } catch (_e) {}
+  }
+
+  // BarIconButton is what the built-in Audio widget uses: same icon size and slot.
+  BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
@@ -67,12 +78,18 @@ BarWidget {
     // Highlighted on error, or as a subtle hint while the microphone is muted.
     active: !!root.portService && (root.portService.error !== "" || root.portService.inputMuted)
     tooltipText: root.tooltip()
-    onPressed: root.togglePanel()
+    onPressed: function(b) {
+      if (b === Qt.RightButton) { if (root.portService) root.portService.toggleOutputMute() }
+      else root.togglePanel()
+    }
     onWheelMoved: function(delta) {
       if (!root.portService) return
       var wheel = Util.wheelSteps(root.wheelAccumulator, delta)
       root.wheelAccumulator = wheel.remainder
-      if (wheel.steps !== 0) root.portService.setOutputVolume(root.portService.outputVolume + wheel.steps * 0.02)
+      if (wheel.steps === 0) return
+      // 5% per notch, clamped 0..100%, as in the built-in widget.
+      root.portService.setOutputVolume(root.portService.outputVolume + wheel.steps * 0.05)
+      Qt.callLater(root.showOsd)
     }
   }
 }

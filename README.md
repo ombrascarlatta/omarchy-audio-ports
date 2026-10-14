@@ -12,7 +12,9 @@ including undetected ones, and switches with one click or one key.
 ## Features
 
 - Bar icon: a single volume glyph (low/medium/high/muted), highlighted
-  while the microphone is muted; scroll over it to change output volume
+  while the microphone is muted. Like the built-in Audio widget: left click
+  opens the panel, right click toggles output mute, scroll changes output
+  volume by 5% per notch (with the volume OSD when the shell allows it)
 - Panel lists every port of every ALSA sink and source, with availability
   (`plugged in`, `unplugged`, `not detected`)
 - Click (or Enter) a port to switch to it and make its device the default
@@ -23,7 +25,7 @@ including undetected ones, and switches with one click or one key.
 - Remembers the last chosen port per device and reapplies it at startup
   (ports only; the default device is never changed on startup)
 - `scripts/cycle-port` CLI for Hyprland keybinds, with a notification
-- IPC: `qs ipc call maxime.audio-ports cycleInput|cycleOutput|status|refresh`
+- IPC: `qs ipc call maxime.audio-ports cycleInput|cycleOutput|volumeUp|volumeDown|toggleMute|status|refresh`
 
 ## Install
 
