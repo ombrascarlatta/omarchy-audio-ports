@@ -39,3 +39,13 @@ let many = ""
 for (let i = 0; i < 50; i++) many += `D\tsink\tdev${i}\td\tp\t0\n`
 assert.equal(Model.parseStatus(many).sinks.length, Model.MAX_DEVICES)
 console.log("model: ok")
+assert.equal(Model.peakToDb(1), 0)
+assert.equal(Math.round(Model.peakToDb(0.5)), -6)
+assert.equal(Model.peakToDb(0), -Infinity)
+assert.equal(Model.dbToFraction(-Infinity), 0)
+assert.equal(Model.dbToFraction(-30), 0.5)
+assert.equal(Model.levelZone(-30), "low")
+assert.equal(Model.levelZone(-12), "good")
+assert.equal(Model.levelZone(-5), "hot")
+assert.equal(Model.levelZone(-1), "clip")
+console.log("meter: ok")

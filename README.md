@@ -16,6 +16,8 @@ including undetected ones, and switches with one click or one key.
 - Panel lists every port of every ALSA sink and source, with availability
   (`plugged in`, `unplugged`, `not detected`)
 - Click (or Enter) a port to switch to it and make its device the default
+- Live microphone peak meter (dBFS) with good-speech and clipping zones and
+  peak hold; it captures only while the panel is open
 - Output and input volume sliders, mute buttons (or right-click a slider)
 - Omarchy-style keyboard navigation (`?` in the panel shows the shortcuts)
 - Remembers the last chosen port per device and reapplies it at startup

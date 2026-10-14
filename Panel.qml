@@ -265,6 +265,16 @@ Panel {
             onMuteToggled: root.toggleMute("source")
           }
 
+          MicMeter {
+            width: parent.width
+            node: root.service ? root.service.defaultSource : null
+            monitoring: root.opened && !!root.service && root.service.hasInput
+            muted: !!root.service && root.service.inputMuted
+            foreground: root.foreground
+            dim: root.dim
+            fontFamily: root.fontFamily
+          }
+
           Column {
             width: parent.width
             spacing: Style.spacing.xs

@@ -104,9 +104,34 @@ function clampVolume(value) {
   return Math.max(0, Math.min(1, v))
 }
 
+// Microphone meter: linear peak (0..1) -> dBFS, and a -60..0 dB display scale.
+var METER_FLOOR_DB = -60
+var GOOD_LOW_DB = -18
+var GOOD_HIGH_DB = -6
+var CLIP_DB = -3
+
+function peakToDb(peak) {
+  var p = Number(peak)
+  if (!isFinite(p) || p <= 0) return -Infinity
+  return 20 * Math.log(Math.min(1, p)) / Math.LN10
+}
+
+function dbToFraction(db) {
+  if (!isFinite(db)) return 0
+  return Math.max(0, Math.min(1, (db - METER_FLOOR_DB) / -METER_FLOOR_DB))
+}
+
+function levelZone(db) {
+  if (db >= CLIP_DB) return "clip"
+  if (db > GOOD_HIGH_DB) return "hot"
+  if (db >= GOOD_LOW_DB) return "good"
+  return "low"
+}
+
 if (typeof module !== "undefined") module.exports = {
   parseStatus: parseStatus, defaultDevice: defaultDevice, activePort: activePort,
   portKind: portKind, portGlyph: portGlyph, availabilityLabel: availabilityLabel,
   rowId: rowId, buildTargets: buildTargets, indexOfId: indexOfId, move: move,
-  clampVolume: clampVolume, MAX_DEVICES: MAX_DEVICES, MAX_PORTS: MAX_PORTS
+  clampVolume: clampVolume, peakToDb: peakToDb, dbToFraction: dbToFraction, levelZone: levelZone,
+  GOOD_LOW_DB: GOOD_LOW_DB, GOOD_HIGH_DB: GOOD_HIGH_DB, CLIP_DB: CLIP_DB, MAX_DEVICES: MAX_DEVICES, MAX_PORTS: MAX_PORTS
 }
