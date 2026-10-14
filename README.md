@@ -47,14 +47,6 @@ omarchy plugin add https://github.com/ombrascarlatta/omarchy-audio-ports.git
 omarchy plugin enable ombrascarlatta.audio-ports
 ```
 
-For development, clone it into the plugin directory instead:
-
-```bash
-git clone https://github.com/ombrascarlatta/omarchy-audio-ports.git \
-  ~/.config/omarchy/plugins/ombrascarlatta.audio-ports
-omarchy plugin enable ombrascarlatta.audio-ports
-```
-
 Omarchy plugins run unsandboxed inside the shell. Review the code before
 enabling it.
 
