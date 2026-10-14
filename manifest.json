@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "maxime.audio-ports",
+  "name": "Audio Ports",
+  "version": "0.1.0",
+  "author": "maxime",
+  "description": "Pick output and input ports (speakers, headphones, internal or headset mic) on the same sound card, even when the jack cannot detect them.",
+  "homepage": "https://github.com/OWNER/omarchy-audio-ports",
+  "license": "MIT",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Audio Ports",
+    "description": "Choose speaker/headphone and microphone ports with volume and mute",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

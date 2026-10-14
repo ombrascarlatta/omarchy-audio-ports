@@ -1,0 +1,54 @@
+#!/usr/bin/bash
+# set-port <sink|source> <device-name> <port> [--keep-default]
+#   Switches the device to the port, makes it the default (unless
+#   --keep-default), and remembers the choice for `restore`.
+# set-port restore
+#   Reapplies remembered ports to devices that still exist. Never changes the
+#   default device, so it cannot fight other routing plugins.
+set -euo pipefail
+# shellcheck source=scripts/common.sh
+source "$(dirname "$(readlink -f "$0")")/common.sh"
+
+pactl_bin=$(pactl_path)
+state=$(state_file)
+
+remember() {
+  local kind=$1 dev=$2 port=$3 dir tmp
+  dir=$(dirname "$state")
+  mkdir -p "$dir" && chmod 700 "$dir"
+  tmp=$(mktemp "$dir/.ports.XXXXXX")
+  if [[ -f $state ]]; then
+    "$head_bin" -n 256 "$state" | /usr/bin/awk -F'\t' -v k="$kind" -v d="$dev" '!($1 == k && $2 == d)' >"$tmp" || true
+  fi
+  printf '%s\t%s\t%s\n' "$kind" "$dev" "$port" >>"$tmp"
+  chmod 600 "$tmp"
+  mv -f "$tmp" "$state"
+}
+
+apply_port() {
+  "$timeout_bin" -k 1s 3s "$pactl_bin" "set-$1-port" "$2" "$3" >/dev/null 2>&1
+}
+
+if [[ ${1:-} == restore ]]; then
+  [[ -f $state ]] || exit 0
+  while IFS=$'\t' read -r kind dev port; do
+    if ! valid_kind "$kind" || ! valid_device "$dev" || ! valid_port "$port"; then continue; fi
+    apply_port "$kind" "$dev" "$port" || true
+  done < <("$head_bin" -n 256 "$state")
+  exit 0
+fi
+
+kind=${1:-} dev=${2:-} port=${3:-} flag=${4:-}
+if ! valid_kind "$kind" || ! valid_device "$dev" || ! valid_port "$port" \
+    || [[ -n $flag && $flag != --keep-default ]]; then
+  echo "usage: set-port <sink|source> <device> <port> [--keep-default] | set-port restore" >&2
+  exit 64
+fi
+
+apply_port "$kind" "$dev" "$port" || { echo "Could not switch $dev to $port" >&2; exit 1; }
+if [[ -z $flag ]]; then
+  "$timeout_bin" -k 1s 3s "$pactl_bin" "set-default-$kind" "$dev" >/dev/null 2>&1 \
+    || { echo "Could not make $dev the default $kind" >&2; exit 1; }
+fi
+remember "$kind" "$dev" "$port" || echo "Port switched, but the choice could not be saved" >&2
+printf '%s\t%s\t%s\n' "$kind" "$dev" "$port"

@@ -1,0 +1,41 @@
+const assert = require("node:assert/strict")
+const fs = require("node:fs")
+const path = require("node:path")
+const { execFileSync } = require("node:child_process")
+const Model = require("../Model.js")
+
+const root = path.join(__dirname, "..")
+const work = fs.mkdtempSync("/tmp/audio-ports-model.")
+for (const f of ["list-sinks.txt", "list-sources.txt"]) fs.copyFileSync(path.join(__dirname, "fixtures", f), path.join(work, f))
+fs.writeFileSync(path.join(work, "default-sink"), "alsa_output.pci-0000_00_1f.3.analog-stereo\n")
+fs.writeFileSync(path.join(work, "default-source"), "alsa_input.pci-0000_00_1f.3.analog-stereo\n")
+const text = execFileSync(path.join(root, "scripts/port-status"), {
+  env: { ...process.env, AUDIO_PORTS_TEST_BIN: path.join(__dirname, "fixtures/bin"), AUDIO_PORTS_TEST_DIR: work }
+}).toString()
+fs.rmSync(work, { recursive: true })
+
+const s = Model.parseStatus(text)
+assert.equal(s.sinks.length, 1)
+assert.equal(s.sources.length, 1)
+assert.deepEqual(s.sinks[0].ports.map(p => p.name), ["analog-output-speaker", "analog-output-headphones"])
+assert.equal(s.sources[0].ports[1].description, "Headset Microphone")
+assert.equal(Model.activePort(Model.defaultDevice(s.sources)).name, "analog-input-internal-mic")
+assert.equal(Model.availabilityLabel(s.sinks[0].ports[1]), "not detected")
+assert.equal(Model.portGlyph("sink", s.sinks[0].ports[1]), "󰋋")
+assert.equal(Model.portGlyph("sink", s.sinks[0].ports[0]), "󰓃")
+assert.equal(Model.portGlyph("source", s.sources[0].ports[1]), "󰋎")
+
+const t = Model.buildTargets(s.sinks, s.sources)
+assert.deepEqual(t.map(x => x.kind), ["volume", "port", "port", "volume", "port", "port", "port"])
+assert.equal(Model.move(t, "output-volume", -1), "output-volume")
+assert.equal(Model.move(t, t[2].id, 1), "input-volume")
+assert.equal(Model.move(t, "missing", 1), "output-volume")
+assert.equal(Model.clampVolume(1.4), 1)
+assert.equal(Model.clampVolume("x"), 0)
+
+// Garbage and oversize input stay bounded.
+assert.deepEqual(Model.parseStatus("junk\nP\tsink\tnope\tp\td\tunknown"), { sinks: [], sources: [] })
+let many = ""
+for (let i = 0; i < 50; i++) many += `D\tsink\tdev${i}\td\tp\t0\n`
+assert.equal(Model.parseStatus(many).sinks.length, Model.MAX_DEVICES)
+console.log("model: ok")

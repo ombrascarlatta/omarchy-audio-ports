@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+# cycle-port <sink|source> [--quiet]
+#   Moves the default sink/source to its next port (all ports, including those
+#   with unknown availability), remembers it, and shows a desktop notification.
+#   Intended for a Hyprland keybind, e.g.
+#   bindd = SUPER ALT, M, Toggle mic port, exec, ~/.config/omarchy/plugins/maxime.audio-ports/scripts/cycle-port source
+set -euo pipefail
+here=$(dirname "$(readlink -f "$0")")
+# shellcheck source=scripts/common.sh
+source "$here/common.sh"
+
+kind=${1:-} quiet=${2:-}
+valid_kind "$kind" && [[ -z $quiet || $quiet == --quiet ]] \
+  || { echo "usage: cycle-port <sink|source> [--quiet]" >&2; exit 64; }
+
+status=$("$here/port-status")
+read -r dev active < <(/usr/bin/awk -F'\t' -v k="$kind" '$1=="D" && $2==k && $6==1 {print $3, $5; exit}' <<<"$status") || true
+[[ -n ${dev:-} ]] || { echo "No default ALSA $kind" >&2; exit 1; }
+
+mapfile -t ports < <(/usr/bin/awk -F'\t' -v k="$kind" -v d="$dev" '$1=="P" && $2==k && $3==d && $6!="unavailable" {print $4 "\t" $5}' <<<"$status")
+(( ${#ports[@]} > 0 )) || { echo "$dev has no selectable ports" >&2; exit 1; }
+
+next=0
+for i in "${!ports[@]}"; do
+  [[ ${ports[$i]%%$'\t'*} == "$active" ]] && next=$(( (i + 1) % ${#ports[@]} ))
+done
+port=${ports[$next]%%$'\t'*} label=${ports[$next]#*$'\t'}
+
+"$here/set-port" "$kind" "$dev" "$port" --keep-default >/dev/null
+if [[ $quiet != --quiet ]] && notify=$(tool notify-send); then
+  icon=audio-input-microphone; title="Microphone"
+  [[ $kind == sink ]] && { icon=audio-speakers; title="Output"; }
+  "$timeout_bin" 2s "$notify" -a "Audio Ports" -i "$icon" -t 1500 "$title" "$label" || true
+fi
+printf '%s\n' "$label"

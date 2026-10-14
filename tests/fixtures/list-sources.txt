@@ -1,0 +1,17 @@
+Source #60
+	State: SUSPENDED
+	Name: alsa_output.pci-0000_00_1f.3.analog-stereo.monitor
+	Description: Monitor of Built-in Audio Analog Stereo
+	Ports:
+	Active Port: n/a
+Source #61
+	State: RUNNING
+	Name: alsa_input.pci-0000_00_1f.3.analog-stereo
+	Description: Built-in Audio Analog Stereo
+	Ports:
+		analog-input-internal-mic: Internal Microphone (type: Mic, priority: 8900, availability unknown)
+		analog-input-headset-mic: Headset Microphone (type: Headset, priority: 8800, availability unknown)
+		analog-input-headphone-mic: Headphone Mic (type: Mic, priority: 8700, not available)
+	Active Port: analog-input-internal-mic
+	Formats:
+		pcm

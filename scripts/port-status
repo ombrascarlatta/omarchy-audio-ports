@@ -1,0 +1,52 @@
+#!/usr/bin/bash
+# Prints the ALSA sinks and sources with every port, one record per line:
+#   D <TAB> kind <TAB> name <TAB> description <TAB> active port <TAB> is default (0|1)
+#   P <TAB> kind <TAB> name <TAB> port <TAB> description <TAB> availability
+# availability is one of: available, unavailable, unknown.
+# Monitor sources and non-ALSA nodes are skipped. Output is size-bounded.
+set -euo pipefail
+# shellcheck source=scripts/common.sh
+source "$(dirname "$(readlink -f "$0")")/common.sh"
+
+awk_bin=/usr/bin/awk
+pactl_bin=$(pactl_path)
+limit=131072
+
+default_sink=$("$timeout_bin" -k 1s 2s "$pactl_bin" get-default-sink 2>/dev/null | "$head_bin" -c 257 || true)
+default_source=$("$timeout_bin" -k 1s 2s "$pactl_bin" get-default-source 2>/dev/null | "$head_bin" -c 257 || true)
+
+list() {
+  local kind=$1 def=$2
+  "$timeout_bin" -k 1s 3s "$pactl_bin" list "${kind}s" 2>/dev/null | "$head_bin" -c 1048576 \
+  | "$awk_bin" -v kind="$kind" -v def="$def" '
+    function clean(s) { gsub(/[\t\r\n]/, " ", s); return substr(s, 1, 200) }
+    function emit() {
+      if (name == "" || name !~ /^alsa_/ || name ~ /\.monitor$/) { reset(); return }
+      printf "D\t%s\t%s\t%s\t%s\t%d\n", kind, name, clean(desc), active, (name == def)
+      for (i = 1; i <= n; i++) printf "P\t%s\t%s\t%s\t%s\t%s\n", kind, name, pname[i], clean(pdesc[i]), pavail[i]
+      reset()
+    }
+    function reset() { name = ""; desc = ""; active = ""; n = 0; in_ports = 0 }
+    BEGIN { reset() }
+    /^(Sink|Source) #/ { emit(); next }
+    /^\tName: / { name = $0; sub(/^\tName: /, "", name); next }
+    /^\tDescription: / { desc = $0; sub(/^\tDescription: /, "", desc); next }
+    /^\tPorts:/ { in_ports = 1; next }
+    /^\tActive Port: / { in_ports = 0; active = $0; sub(/^\tActive Port: /, "", active); next }
+    /^\t[^\t]/ { in_ports = 0; next }
+    in_ports && /^\t\t[^\t]/ {
+      line = $0; sub(/^\t\t/, "", line)
+      p = line; sub(/: .*$/, "", p)
+      d = line; sub(/^[^:]*: /, "", d); sub(/ \(.*$/, "", d)
+      a = "unknown"
+      if (line ~ /not available\)$/) a = "unavailable"
+      else if (line ~ /[ ,(]available\)$/) a = "available"
+      n++; pname[n] = p; pdesc[n] = d; pavail[n] = a
+      next
+    }
+    END { emit() }'
+}
+
+out=$( { list sink "$default_sink"; list source "$default_source"; } | "$head_bin" -c $((limit + 1)) )
+if (( ${#out} > limit )); then echo "Port status exceeded its limit" >&2; exit 65; fi
+[[ -z $out ]] || printf '%s\n' "$out"

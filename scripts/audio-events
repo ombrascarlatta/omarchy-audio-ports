@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+# Follows `pactl subscribe` and prints the fixed token "changed" at most once
+# per second when a sink, source, card or server changes. Device-controlled
+# text never reaches Quickshell.
+set -euo pipefail
+# shellcheck source=scripts/common.sh
+source "$(dirname "$(readlink -f "$0")")/common.sh"
+pactl_bin=$(pactl_path)
+
+coproc EVENTS { exec "$pactl_bin" subscribe; }
+# shellcheck disable=SC2153 # EVENTS_PID is set by coproc
+events_pid=$EVENTS_PID
+exec {events_fd}<&"${EVENTS[0]}"
+cleanup() {
+  trap - EXIT INT TERM
+  /usr/bin/kill -TERM "$events_pid" 2>/dev/null || true
+  wait "$events_pid" 2>/dev/null || true
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+last=0
+while IFS= read -r line <&"$events_fd"; do
+  case $line in
+    *" on sink #"*|*" on source #"*|*" on card #"*|*" on server #"*)
+      printf -v now '%(%s)T' -1
+      if [[ $now != "$last" ]]; then printf 'changed\n'; last=$now; fi ;;
+  esac
+done

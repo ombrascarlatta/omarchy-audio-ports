@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Fake pactl backed by files in $AUDIO_PORTS_TEST_DIR. Records mutating calls.
+set -euo pipefail
+d=$AUDIO_PORTS_TEST_DIR
+case ${1:-} in
+  get-default-sink) cat "$d/default-sink" ;;
+  get-default-source) cat "$d/default-source" ;;
+  list) case ${2:-} in sinks) cat "$d/list-sinks.txt" ;; sources) cat "$d/list-sources.txt" ;; *) exit 64 ;; esac ;;
+  set-sink-port|set-source-port)
+    printf '%s\n' "$*" >>"$d/calls"
+    kind=${1#set-}; kind=${kind%-port}
+    sed -i "/^\tName: $2\$/,/Active Port/ s/^\tActive Port: .*/\tActive Port: $3/" "$d/list-${kind}s.txt" ;;
+  set-default-sink) printf '%s\n' "$*" >>"$d/calls"; printf '%s\n' "$2" >"$d/default-sink" ;;
+  set-default-source) printf '%s\n' "$*" >>"$d/calls"; printf '%s\n' "$2" >"$d/default-source" ;;
+  subscribe) printf "Event 'change' on sink #50\n" ;;
+  *) echo "unexpected pactl invocation: $*" >&2; exit 64 ;;
+esac
