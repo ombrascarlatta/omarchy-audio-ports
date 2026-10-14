@@ -48,8 +48,5 @@ grep -q '^set-sink-port alsa_output.pci-0000_00_1f.3.analog-stereo analog-output
 ! grep -q set-default "$work/calls" || fail "restore changed the default"
 
 grep -q "restored sink" "$work/log" || fail "restore not logged"
-"$s/volume-key" +10 && "$s/volume-key" mute-toggle
-[[ $(tr "\n" " " <"$work/volume-calls") == "+10 mute-toggle " ]] || fail "volume-key"
-if "$s/volume-key" "+5;x" 2>/dev/null; then fail "volume-key accepted junk"; fi
 [[ $(timeout 3 "$s/audio-events") == changed ]] || fail "audio-events"
 echo "integration: ok"

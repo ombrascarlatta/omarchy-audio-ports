@@ -22,6 +22,27 @@ BarWidget {
   readonly property bool liveMuted: !sinkNode || !sinkNode.audio || sinkNode.audio.muted === true
   PwObjectTracker { objects: root.sinkNode ? [root.sinkNode] : [] }
 
+  // Like the volume keys, without their OSD: 5% per notch, clamped to
+  // 0..100%, and changing the volume unmutes.
+  function stepVolume(steps) {
+    if (!sinkNode || !sinkNode.audio || steps === 0) return
+    sinkNode.audio.muted = false
+    sinkNode.audio.volume = Model.clampVolume(Math.round((liveVolume + steps * 0.05) * 100) / 100)
+  }
+  function toggleMute() {
+    if (sinkNode && sinkNode.audio) sinkNode.audio.muted = !sinkNode.audio.muted
+  }
+
+  // The bar copies tooltip text when the pointer enters, so re-show it with
+  // the new text while hovered. Debounced so a scroll burst re-shows once.
+  readonly property string liveTooltip: tooltip()
+  onLiveTooltipChanged: if (button.tooltipHovered === true) tooltipRefresh.restart()
+  Timer {
+    id: tooltipRefresh
+    interval: 120
+    onTriggered: if (root.bar && button.tooltipHovered === true) root.bar.showTooltip(button, root.liveTooltip)
+  }
+
   function injectPanel() {
     var target = panelLoader.item
     if (!target) return
@@ -75,18 +96,16 @@ BarWidget {
     text: root.glyph()
     // Highlighted on error, or as a subtle hint while the microphone is muted.
     active: !!root.portService && (root.portService.error !== "" || root.portService.inputMuted)
-    tooltipText: root.tooltip()
+    tooltipText: root.liveTooltip
     onPressed: function(b) {
-      if (b === Qt.RightButton) { if (root.portService) root.portService.muteKey() }
+      if (b === Qt.RightButton) root.toggleMute()
       else root.togglePanel()
     }
     onWheelMoved: function(delta) {
-      if (!root.portService) return
       var wheel = Util.wheelSteps(root.wheelAccumulator, delta)
       root.wheelAccumulator = wheel.remainder
       if (wheel.steps === 0) return
-      // Same command as the volume keys: 5% per notch, clamped, with the OSD.
-      root.portService.volumeKey(wheel.steps)
+      root.stepVolume(wheel.steps)
     }
   }
 }

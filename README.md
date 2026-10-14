@@ -14,8 +14,7 @@ including undetected ones, and switches with one click or one key.
 - Bar icon: a single volume glyph (low/medium/high/muted), highlighted
   while the microphone is muted. Like the built-in Audio widget: left click
   opens the panel, right click toggles output mute, scroll changes output
-  volume by 5% per notch through Omarchy's own volume-key command, so the same OSD as the media keys
-  appears
+  volume by 5% per notch (clamped, unmutes); the tooltip updates live
 - Panel lists every port of every ALSA sink and source, with availability
   (`plugged in`, `unplugged`, `not detected`)
 - Click (or Enter) a port to switch to it and make its device the default
