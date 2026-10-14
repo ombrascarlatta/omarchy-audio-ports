@@ -26,6 +26,12 @@ Item {
   readonly property string runtimeDir: String(Quickshell.env("XDG_RUNTIME_DIR") || "")
   readonly property var childEnvironment: {
     var env = { "HOME": home, "LANG": "C", "LC_ALL": "C", "PATH": "/usr/bin:/bin" }
+    // Needed by Omarchy's volume/OSD commands (scripts/volume-key).
+    var passthrough = ["OMARCHY_PATH", "WAYLAND_DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE", "DBUS_SESSION_BUS_ADDRESS"]
+    for (var i = 0; i < passthrough.length; i++) {
+      var value = String(Quickshell.env(passthrough[i]) || "")
+      if (value) env[passthrough[i]] = value
+    }
     var stateHome = String(Quickshell.env("XDG_STATE_HOME") || "")
     if (stateHome) env["XDG_STATE_HOME"] = stateHome
     if (runtimeDir) {
@@ -97,6 +103,30 @@ Item {
       if (choices[i].name === device.activePort) index = (i + 1) % choices.length
     selectPort(kind, device.name, choices[index].name)
     return choices[index].description
+  }
+
+  // Volume change through Omarchy's media-key command, which also shows its
+  // OSD (third-party plugins may not summon omarchy.osd directly). Wheel bursts
+  // while the command runs are coalesced into one "+N"/"-N" step.
+  property int pendingVolumeSteps: 0
+  function volumeKey(steps) {
+    pendingVolumeSteps += steps
+    if (volumeKeyProc.running || pendingVolumeSteps === 0 || !sourceDir) return
+    var n = Math.max(-20, Math.min(20, pendingVolumeSteps))
+    pendingVolumeSteps = 0
+    volumeKeyProc.command = bounded(6, "volume-key", [(n > 0 ? "+" : "-") + Math.abs(n) * 5])
+    volumeKeyProc.running = true
+  }
+  function muteKey() {
+    if (!sourceDir || volumeKeyProc.running) return
+    volumeKeyProc.command = bounded(6, "volume-key", ["mute-toggle"])
+    volumeKeyProc.running = true
+  }
+  Process {
+    id: volumeKeyProc
+    clearEnvironment: true
+    environment: root.childEnvironment
+    onExited: if (!root.stopping && root.pendingVolumeSteps !== 0) Qt.callLater(function() { root.volumeKey(0) })
   }
 
   function setOutputVolume(value) {

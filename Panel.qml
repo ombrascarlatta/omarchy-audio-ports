@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import Quickshell.Services.Pipewire
 import "Model.js" as Model
 
 Panel {
@@ -14,6 +15,18 @@ Panel {
   property bool cursorActive: false
   property string cursorId: ""
   property bool shortcutsExpanded: false
+
+  // Volume and mute are read from PipeWire directly so the sliders follow
+  // external changes live (media keys, scroll on the bar icon, other apps).
+  readonly property var sinkNode: Pipewire.defaultAudioSink
+  readonly property var sourceNode: Pipewire.defaultAudioSource
+  PwObjectTracker { objects: [root.sinkNode, root.sourceNode].filter(function(n) { return !!n }) }
+  readonly property bool hasOutput: !!(sinkNode && sinkNode.audio)
+  readonly property bool hasInput: !!(sourceNode && sourceNode.audio)
+  readonly property real outputVolume: hasOutput ? Number(sinkNode.audio.volume || 0) : 0
+  readonly property real inputVolume: hasInput ? Number(sourceNode.audio.volume || 0) : 0
+  readonly property bool outputMuted: hasOutput && sinkNode.audio.muted === true
+  readonly property bool inputMuted: hasInput && sourceNode.audio.muted === true
 
   readonly property int serviceRevision: service ? service.revision : 0
   readonly property color foreground: bar ? bar.foreground : Color.foreground
@@ -41,8 +54,8 @@ Panel {
   }
   function adjustVolume(kind, delta) {
     if (!service) return
-    if (kind === "source") service.setInputVolume(service.inputVolume + delta * 0.05)
-    else service.setOutputVolume(service.outputVolume + delta * 0.05)
+    if (kind === "source") service.setInputVolume(root.inputVolume + delta * 0.05)
+    else service.setOutputVolume(root.outputVolume + delta * 0.05)
   }
   function toggleMute(kind) {
     if (!service) return
@@ -212,9 +225,9 @@ Panel {
             bar: root.bar
             title: "OUTPUT"
             targetId: "output-volume"
-            volume: root.service ? root.service.outputVolume : 0
-            muted: !!root.service && root.service.outputMuted
-            available: !!root.service && root.service.hasOutput
+            volume: root.outputVolume
+            muted: root.outputMuted
+            available: root.hasOutput
             foreground: root.foreground
             dim: root.dim
             fontFamily: root.fontFamily
@@ -255,9 +268,9 @@ Panel {
             targetId: "input-volume"
             muteGlyph: "󰍭"
             unmuteGlyph: "󰍬"
-            volume: root.service ? root.service.inputVolume : 0
-            muted: !!root.service && root.service.inputMuted
-            available: !!root.service && root.service.hasInput
+            volume: root.inputVolume
+            muted: root.inputMuted
+            available: root.hasInput
             foreground: root.foreground
             dim: root.dim
             fontFamily: root.fontFamily
@@ -267,9 +280,9 @@ Panel {
 
           MicMeter {
             width: parent.width
-            node: root.service ? root.service.defaultSource : null
-            monitoring: root.opened && !!root.service && root.service.hasInput
-            muted: !!root.service && root.service.inputMuted
+            node: root.sourceNode
+            monitoring: root.opened && root.hasInput
+            muted: root.inputMuted
             foreground: root.foreground
             dim: root.dim
             fontFamily: root.fontFamily

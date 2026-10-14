@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import Quickshell.Services.Pipewire
 import "Model.js" as Model
 
 BarWidget {
@@ -14,6 +15,12 @@ BarWidget {
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property bool popoutSwitchClosing: panelLoader.item ? panelLoader.item.popoutSwitchClosing === true : false
   property real wheelAccumulator: 0
+  // Read volume/mute straight from PipeWire so the icon follows every change
+  // (media keys, other apps), not only the service's own.
+  readonly property var sinkNode: Pipewire.defaultAudioSink
+  readonly property real liveVolume: sinkNode && sinkNode.audio ? Number(sinkNode.audio.volume || 0) : 0
+  readonly property bool liveMuted: !sinkNode || !sinkNode.audio || sinkNode.audio.muted === true
+  PwObjectTracker { objects: root.sinkNode ? [root.sinkNode] : [] }
 
   function injectPanel() {
     var target = panelLoader.item
@@ -34,7 +41,7 @@ BarWidget {
     if (!s) return "󰕾"
     if (s.error) return ""
     var hp = Model.portKind(s.currentSinkPort) === "headphones"
-    return Model.volumeGlyph(s.outputVolume, s.outputMuted || !s.hasOutput, hp && !s.outputMuted)
+    return Model.volumeGlyph(root.liveVolume, root.liveMuted, hp && !root.liveMuted)
   }
 
   function tooltip() {
@@ -42,7 +49,7 @@ BarWidget {
     if (!s) return "Audio Ports service unavailable"
     if (s.error) return s.error
     var out = s.currentSinkPort ? s.currentSinkPort.description : "No output"
-    var vol = s.outputMuted ? "muted" : Math.round(s.outputVolume * 100) + "%"
+    var vol = root.liveMuted ? "muted" : Math.round(root.liveVolume * 100) + "%"
     var mic = s.currentSourcePort ? s.currentSourcePort.description : "No microphone"
     return out + " · " + vol + "\n" + mic + (s.inputMuted ? " · muted" : "")
   }
@@ -60,15 +67,6 @@ BarWidget {
     onLoaded: { root.injectPanel(); Qt.callLater(root.injectPanel) }
   }
 
-  // Volume OSD like the built-in widget. A scoped host may refuse it.
-  function showOsd() {
-    var s = portService
-    try {
-      if (s && bar && bar.shell && typeof bar.shell.summon === "function")
-        bar.shell.summon("omarchy.osd", JSON.stringify({ icon: Model.volumeGlyph(s.outputVolume, s.outputMuted), value: Math.round(s.outputVolume * 100) }))
-    } catch (_e) {}
-  }
-
   // BarIconButton is what the built-in Audio widget uses: same icon size and slot.
   BarIconButton {
     id: button
@@ -79,7 +77,7 @@ BarWidget {
     active: !!root.portService && (root.portService.error !== "" || root.portService.inputMuted)
     tooltipText: root.tooltip()
     onPressed: function(b) {
-      if (b === Qt.RightButton) { if (root.portService) root.portService.toggleOutputMute() }
+      if (b === Qt.RightButton) { if (root.portService) root.portService.muteKey() }
       else root.togglePanel()
     }
     onWheelMoved: function(delta) {
@@ -87,9 +85,8 @@ BarWidget {
       var wheel = Util.wheelSteps(root.wheelAccumulator, delta)
       root.wheelAccumulator = wheel.remainder
       if (wheel.steps === 0) return
-      // 5% per notch, clamped 0..100%, as in the built-in widget.
-      root.portService.setOutputVolume(root.portService.outputVolume + wheel.steps * 0.05)
-      Qt.callLater(root.showOsd)
+      // Same command as the volume keys: 5% per notch, clamped, with the OSD.
+      root.portService.volumeKey(wheel.steps)
     }
   }
 }
