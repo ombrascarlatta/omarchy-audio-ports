@@ -14,7 +14,8 @@ including undetected ones, and switches with one click or one key.
 - Bar icon: a single volume glyph (low/medium/high/muted), highlighted
   while the microphone is muted. Like the built-in Audio widget: left click
   opens the panel, right click toggles output mute, scroll changes output
-  volume by 5% per notch (clamped, unmutes); the tooltip updates live
+  volume by 5% per notch (clamped, unmutes). Its tooltip is the plugin's own copy of the bar
+  tooltip, so it stays open and updates live while scrolling
 - Panel lists every port of every ALSA sink and source, with availability
   (`plugged in`, `unplugged`, `not detected`)
 - Click (or Enter) a port to switch to it and make its device the default

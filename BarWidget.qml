@@ -33,14 +33,21 @@ BarWidget {
     if (sinkNode && sinkNode.audio) sinkNode.audio.muted = !sinkNode.audio.muted
   }
 
-  // The bar copies tooltip text when the pointer enters, so re-show it with
-  // the new text while hovered. Debounced so a scroll burst re-shows once.
+  // Our own tooltip (BarTooltip.qml) instead of the bar's, which copies its
+  // text when shown; this one stays open and updates while scrolling.
   readonly property string liveTooltip: tooltip()
-  onLiveTooltipChanged: if (button.tooltipHovered === true) tooltipRefresh.restart()
-  Timer {
-    id: tooltipRefresh
-    interval: 120
-    onTriggered: if (root.bar && button.tooltipHovered === true) root.bar.showTooltip(button, root.liveTooltip)
+  BarTooltip {
+    target: button
+    bar: root.bar
+    text: root.liveTooltip
+    hovered: button.tooltipHovered === true
+    suppressed: root.opened || clickHide
+  }
+  // A click hides the tooltip until the pointer leaves, like the native one.
+  property bool clickHide: false
+  Connections {
+    target: button
+    function onTooltipHoveredChanged() { if (!button.tooltipHovered) root.clickHide = false }
   }
 
   function injectPanel() {
@@ -96,8 +103,9 @@ BarWidget {
     text: root.glyph()
     // Highlighted on error, or as a subtle hint while the microphone is muted.
     active: !!root.portService && (root.portService.error !== "" || root.portService.inputMuted)
-    tooltipText: root.liveTooltip
+    tooltipText: ""  // see BarTooltip above
     onPressed: function(b) {
+      root.clickHide = true
       if (b === Qt.RightButton) root.toggleMute()
       else root.togglePanel()
     }
