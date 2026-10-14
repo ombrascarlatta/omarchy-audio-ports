@@ -121,6 +121,7 @@ Item {
   function stopRuntime() {
     stopping = true
     eventsRestart.stop()
+    restoreAgain.stop()
     debounce.stop()
     var procs = [eventsProc, statusProc, switchProc, restoreProc]
     for (var i = 0; i < procs.length; i++) if (procs[i].running) procs[i].running = false
@@ -144,8 +145,15 @@ Item {
     command: root.bounded(10, "set-port", ["restore"])
     clearEnvironment: true
     environment: root.childEnvironment
-    onExited: root.refresh()
+    onExited: {
+      // WirePlumber can reapply its own route just after the shell starts;
+      // restore once more after it settles.
+      if (!root.stopping && !root.restoredTwice) { root.restoredTwice = true; restoreAgain.start() }
+      root.refresh()
+    }
   }
+  property bool restoredTwice: false
+  Timer { id: restoreAgain; interval: 3000; onTriggered: if (!root.stopping) restoreProc.running = true }
 
   Process {
     id: eventsProc

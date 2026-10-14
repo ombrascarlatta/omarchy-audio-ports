@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "%s\n" "$*" >>"$AUDIO_PORTS_TEST_DIR/log"

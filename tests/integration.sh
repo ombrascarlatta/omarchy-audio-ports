@@ -47,5 +47,6 @@ grep -q "Microphone" "$work/notifications" || fail "no notification"
 grep -q '^set-sink-port alsa_output.pci-0000_00_1f.3.analog-stereo analog-output-headphones$' "$work/calls" || fail "restore"
 ! grep -q set-default "$work/calls" || fail "restore changed the default"
 
+grep -q "restored sink" "$work/log" || fail "restore not logged"
 [[ $(timeout 3 "$s/audio-events") == changed ]] || fail "audio-events"
 echo "integration: ok"

@@ -25,6 +25,13 @@ remember() {
   mv -f "$tmp" "$state"
 }
 
+# Leaves an audit line in the journal (journalctl --user -t audio-ports).
+log() {
+  local logger
+  logger=$(tool logger) || return 0
+  "$timeout_bin" 2s "$logger" -t audio-ports -- "$*" 2>/dev/null || true
+}
+
 apply_port() {
   "$timeout_bin" -k 1s 3s "$pactl_bin" "set-$1-port" "$2" "$3" >/dev/null 2>&1
 }
@@ -33,7 +40,8 @@ if [[ ${1:-} == restore ]]; then
   [[ -f $state ]] || exit 0
   while IFS=$'\t' read -r kind dev port; do
     if ! valid_kind "$kind" || ! valid_device "$dev" || ! valid_port "$port"; then continue; fi
-    apply_port "$kind" "$dev" "$port" || true
+    if apply_port "$kind" "$dev" "$port"; then log "restored $kind $dev -> $port"
+    else log "could not restore $kind $dev -> $port"; fi
   done < <("$head_bin" -n 256 "$state")
   exit 0
 fi
@@ -50,5 +58,6 @@ if [[ -z $flag ]]; then
   "$timeout_bin" -k 1s 3s "$pactl_bin" "set-default-$kind" "$dev" >/dev/null 2>&1 \
     || { echo "Could not make $dev the default $kind" >&2; exit 1; }
 fi
+log "selected $kind $dev -> $port${flag:+ ($flag)}"
 remember "$kind" "$dev" "$port" || echo "Port switched, but the choice could not be saved" >&2
 printf '%s\t%s\t%s\n' "$kind" "$dev" "$port"

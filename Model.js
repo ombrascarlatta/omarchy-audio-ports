@@ -110,10 +110,12 @@ var GOOD_LOW_DB = -18
 var GOOD_HIGH_DB = -6
 var CLIP_DB = -3
 
+// Quickshell's PwNodePeakMonitor.peak is the cube root of the linear sample
+// peak (a "visual" curve), so dBFS = 20*log10(peak^3) = 60*log10(peak).
 function peakToDb(peak) {
   var p = Number(peak)
   if (!isFinite(p) || p <= 0) return -Infinity
-  return 20 * Math.log(Math.min(1, p)) / Math.LN10
+  return 60 * Math.log(Math.min(1, p)) / Math.LN10
 }
 
 function dbToFraction(db) {

@@ -23,9 +23,13 @@ Item {
   readonly property color clipColor: Color.urgent
   readonly property color goodColor: Color.accent
 
-  function x(db) { return track.width * Model.dbToFraction(db) }
+  function xFor(db) { return track.width * Model.dbToFraction(db) }
 
-  implicitHeight: track.height + Style.space(4) + label.implicitHeight
+  // Explicit height: Column children with no height collapse to nothing.
+  implicitHeight: trackHeight + labelGap + Math.max(label.implicitHeight, 14)
+  height: implicitHeight
+  readonly property real trackHeight: Math.max(8, Number(Style.space(8)) || 8)
+  readonly property real labelGap: Math.max(4, Number(Style.space(4)) || 4)
 
   PwNodePeakMonitor {
     id: monitor
@@ -52,7 +56,7 @@ Item {
   Rectangle {
     id: track
     width: parent.width
-    height: Math.max(Style.space(8), Style.spacing.xs)
+    height: root.trackHeight
     radius: height / 2
     color: Util.alpha(root.foreground, 0.12)
     clip: true
@@ -60,24 +64,24 @@ Item {
 
     // Guide zones.
     Rectangle {
-      x: root.x(Model.GOOD_LOW_DB); width: root.x(Model.GOOD_HIGH_DB) - x
+      x: root.xFor(Model.GOOD_LOW_DB); width: root.xFor(Model.GOOD_HIGH_DB) - x
       height: parent.height; color: Util.alpha(root.goodColor, 0.22)
     }
     Rectangle {
-      x: root.x(Model.CLIP_DB); width: parent.width - x
+      x: root.xFor(Model.CLIP_DB); width: parent.width - x
       height: parent.height; color: Util.alpha(root.clipColor, 0.25)
     }
     // Live level.
     Rectangle {
       height: parent.height
-      width: root.x(root.db)
+      width: root.xFor(root.db)
       color: Model.levelZone(root.db) === "clip" ? root.clipColor : root.foreground
       Behavior on width { NumberAnimation { duration: 60 } }
     }
     // Peak hold.
     Rectangle {
       visible: isFinite(root.holdDb) && root.holdDb > -60
-      x: Math.max(0, root.x(root.holdDb) - width)
+      x: Math.max(0, root.xFor(root.holdDb) - width)
       width: Math.max(2, Style.space(2)); height: parent.height
       color: root.zone === "clip" ? root.clipColor : root.goodColor
     }
@@ -86,7 +90,7 @@ Item {
   Text {
     id: label
     anchors.top: track.bottom
-    anchors.topMargin: Style.space(4)
+    anchors.topMargin: root.labelGap
     width: parent.width
     text: {
       if (root.muted) return "Microphone muted"
