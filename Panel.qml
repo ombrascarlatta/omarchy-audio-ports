@@ -6,7 +6,7 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "maxime.audio-ports"
+  moduleName: "ombrascarlatta.audio-ports"
   manageIpc: false
 
   property var service: null

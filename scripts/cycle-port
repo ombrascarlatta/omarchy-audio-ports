@@ -3,7 +3,7 @@
 #   Moves the default sink/source to its next port (all ports, including those
 #   with unknown availability), remembers it, and shows a desktop notification.
 #   Intended for a Hyprland keybind, e.g.
-#   bindd = SUPER ALT, M, Toggle mic port, exec, ~/.config/omarchy/plugins/maxime.audio-ports/scripts/cycle-port source
+#   bindd = SUPER ALT, M, Toggle mic port, exec, ~/.config/omarchy/plugins/ombrascarlatta.audio-ports/scripts/cycle-port source
 set -euo pipefail
 here=$(dirname "$(readlink -f "$0")")
 # shellcheck source=scripts/common.sh

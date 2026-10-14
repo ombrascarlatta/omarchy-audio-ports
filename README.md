@@ -26,23 +26,33 @@ including undetected ones, and switches with one click or one key.
 - Remembers the last chosen port per device and reapplies it at startup
   (ports only; the default device is never changed on startup)
 - `scripts/cycle-port` CLI for Hyprland keybinds, with a notification
-- IPC: `qs ipc call maxime.audio-ports cycleInput|cycleOutput|volumeUp|volumeDown|toggleMute|status|refresh`
+- IPC: `omarchy-shell ombrascarlatta.audio-ports <cycleInput|cycleOutput|volumeUp|volumeDown|toggleMute|status|refresh>`
+
+## Requirements
+
+- Omarchy 4 (Quickshell-based shell) with its plugin system
+- PipeWire with `pipewire-pulse` (the plugin uses `pactl` from `libpulse`)
+- Standard tools: `bash`, `awk`, `timeout` (coreutils)
+- Optional: `notify-send` (`libnotify`) for `cycle-port` notifications,
+  `logger` (util-linux) for the journal audit lines
+
+All of these ship with a default Omarchy install.
 
 ## Install
 
 From git:
 
 ```bash
-omarchy plugin add https://github.com/OWNER/omarchy-audio-ports.git
-omarchy plugin enable maxime.audio-ports
+omarchy plugin add https://github.com/ombrascarlatta/omarchy-audio-ports.git
+omarchy plugin enable ombrascarlatta.audio-ports
 ```
 
-From a local checkout, copy (or clone) it to the plugin directory and enable
-it:
+For development, clone it into the plugin directory instead:
 
 ```bash
-cp -r omarchy-audio-ports ~/.config/omarchy/plugins/maxime.audio-ports
-omarchy plugin enable maxime.audio-ports
+git clone https://github.com/ombrascarlatta/omarchy-audio-ports.git \
+  ~/.config/omarchy/plugins/ombrascarlatta.audio-ports
+omarchy plugin enable ombrascarlatta.audio-ports
 ```
 
 Omarchy plugins run unsandboxed inside the shell. Review the code before
@@ -52,16 +62,38 @@ After updating the files of an installed plugin by hand, run
 `omarchy-restart-shell`: the running shell can keep the previously compiled
 panel components even after `omarchy plugin disable`/`enable`.
 
-Remove with `omarchy plugin remove maxime.audio-ports`. The remembered ports
-live in `~/.local/state/omarchy-audio-ports/ports.tsv`; delete it to forget them.
+## What it changes on your system
+
+Audio Ports never edits your Omarchy configuration (`shell.json`, bar layout)
+or other plugins. Omarchy adds the widget to the bar when you enable it. The
+plugin only changes audio state when you ask it to (selecting a port, volume,
+mute), and at startup it reapplies the ports you chose before. Your choices are
+kept in `~/.local/state/omarchy-audio-ports/ports.tsv`.
+
+The built-in Audio widget stays enabled. If you want only one audio icon, you
+can disable it yourself (optional, reversible):
+
+```bash
+omarchy plugin disable omarchy.audio
+```
+
+## Remove
+
+```bash
+omarchy plugin remove ombrascarlatta.audio-ports
+rm -rf ~/.local/state/omarchy-audio-ports   # optional: forget remembered ports
+omarchy plugin enable omarchy.audio         # if you had disabled the built-in widget
+```
+
+Also delete any `cycle-port` keybinds you added to `~/.config/hypr/bindings.conf`.
 
 ## Keyboard shortcut for the microphone
 
 Add to `~/.config/hypr/bindings.conf`:
 
 ```
-bindd = SUPER ALT, M, Toggle microphone port, exec, ~/.config/omarchy/plugins/maxime.audio-ports/scripts/cycle-port source
-bindd = SUPER ALT, A, Toggle output port, exec, ~/.config/omarchy/plugins/maxime.audio-ports/scripts/cycle-port sink
+bindd = SUPER ALT, M, Toggle microphone port, exec, ~/.config/omarchy/plugins/ombrascarlatta.audio-ports/scripts/cycle-port source
+bindd = SUPER ALT, A, Toggle output port, exec, ~/.config/omarchy/plugins/ombrascarlatta.audio-ports/scripts/cycle-port sink
 ```
 
 `cycle-port` moves the default device to its next port, skipping ports that

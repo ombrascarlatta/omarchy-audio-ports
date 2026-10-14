@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "maxime.audio-ports",
+  "id": "ombrascarlatta.audio-ports",
   "name": "Audio Ports",
-  "version": "0.1.0",
-  "author": "maxime",
+  "version": "0.2.0",
+  "author": "ombrascarlatta",
   "description": "Pick output and input ports (speakers, headphones, internal or headset mic) on the same sound card, even when the jack cannot detect them.",
-  "homepage": "https://github.com/OWNER/omarchy-audio-ports",
+  "homepage": "https://github.com/ombrascarlatta/omarchy-audio-ports",
   "license": "MIT",
   "kinds": [
     "service",

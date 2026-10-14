@@ -6,7 +6,7 @@ import "Model.js" as Model
 
 BarWidget {
   id: root
-  moduleName: "maxime.audio-ports"
+  moduleName: "ombrascarlatta.audio-ports"
 
   readonly property var portService: {
     var host = bar && bar.shell ? bar.shell : null

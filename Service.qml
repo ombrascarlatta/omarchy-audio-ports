@@ -14,7 +14,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string pluginId: manifest && manifest.id ? String(manifest.id) : "maxime.audio-ports"
+  readonly property string pluginId: manifest && manifest.id ? String(manifest.id) : "ombrascarlatta.audio-ports"
   // Scoped host manifests omit installation paths, so resolve from this file.
   readonly property string sourceDir: {
     var url = String(Qt.resolvedUrl("."))
